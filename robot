@@ -104,13 +104,12 @@ void setup(){
     Serial.println("false");
     Serial.println("Try out all the buttons, X will vibrate the controller, faster as you press harder;");
     Serial.println("holding L1 or R1 will print out the analog stick values.");
-    Serial.println("Note: Go to www.billporter.info for updates and to report bugs.");
   }  
   else if(error == 1)
-    Serial.println("No controller found, check wiring, see readme.txt to enable debug. visit www.billporter.info for troubleshooting tips");
+    Serial.println("No controller found, check wiring, see readme.txt to enable debug");
    
   else if(error == 2)
-    Serial.println("Controller found but not accepting commands. see readme.txt to enable debug. Visit www.billporter.info for troubleshooting tips");
+    Serial.println("Controller found but not accepting commands. see readme.txt to enable debug");
 
 
   else if(error == 3)
