@@ -58,8 +58,8 @@ const int shootMotor2 = 15; // Động cơ 4 chân cắm motor ở kênh tín hi
 
 
 //Khai báo Servo
-Servo servoWrist; //Servo 360
-Servo servoNOACTION; //Servo 360
+Servo servoWrist1; //Servo 360
+Servo servoWrist2; //Servo 360
 Servo servoSensor; //Servo 180
 Servo servoGate; //Servo 180
 
@@ -72,11 +72,9 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 Adafruit_TCS34725 tcs= Adafruit_TCS34725(TCS34725_INTERGRATIONTIME_101MS,TCS34725_GAIN_4X);
 
 
-//Tạo các biến
-int joyY;
-int joyX;
-int njoyY;
-int njoyX;
+// Khai báo góc cho servo cảm biến
+int angle1;
+int angle2;
 
 
 void setup(){
@@ -104,12 +102,13 @@ void setup(){
     Serial.println("false");
     Serial.println("Try out all the buttons, X will vibrate the controller, faster as you press harder;");
     Serial.println("holding L1 or R1 will print out the analog stick values.");
+    Serial.println("Note: Go to www.billporter.info for updates and to report bugs.");
   }  
   else if(error == 1)
-    Serial.println("No controller found, check wiring, see readme.txt to enable debug");
+    Serial.println("No controller found, check wiring, see readme.txt to enable debug. visit www.billporter.info for troubleshooting tips");
    
   else if(error == 2)
-    Serial.println("Controller found but not accepting commands. see readme.txt to enable debug");
+    Serial.println("Controller found but not accepting commands. see readme.txt to enable debug. Visit www.billporter.info for troubleshooting tips");
 
 
   else if(error == 3)
@@ -165,12 +164,6 @@ void setup(){
   servoSensor.write(90);
 
 
-  //Lưu giá trị mặc định ban đầu của joystick
-  ps2x.read_gamepad();
-  joyX=ps2x.Analog(PSS_LX);
-  joyY=ps2x.Analog(PSS_RY);
-
-
 }
 
 
@@ -186,6 +179,70 @@ void StopWork(int numPWM){ // Hàm dừng động cơ
 }
 
 
+void MoveRobot(){ //Hàm di chuyển Robot bằng joystick
+    //Biến lưu giá trị joystick
+    int x = 0;
+    int y = 0;
+
+
+    //Biến lưu tốc độ cho 2 bánh
+    float leftWheelDutyCycle = 0;
+    float rightWheelDutyCycle = 0;
+
+
+    // Đọc giá trị từ joystick
+    ps2x.read_gamepad();
+    x = ps2x.Analog(PSS_LX);  // Đọc trục x của joystick trái
+    y = ps2x.Analog(PSS_RY);  // Đọc trục y của joystick trái
+   
+    // Chuyển đổi giá trị joystick từ khoảng 0-255 sang -128 đến 127
+    x = map(x, 0, 255, -127, 127);
+    y = map(y, 0, 255, -127, 127);
+
+
+    if (y>=0){ //Nếu giá trị trục y>0 thì robot đi thẳng và tốc độ được cập nhật liên tục
+                //Nếu x=0 thì robot rẽ theo hướng tùy vào giá trị x
+     
+      //Tính toán giá trị tốc độ của bánh trái và phải, x<0 thì bánh phải nhanh hơn, x>0 thì bánh trái quay nhanh hơn
+      rightWheelDutyCycle=(abs((double)(y - x)) / 127)*2457;
+      leftWheelDutyCycle=(abs((double)(y - (-x))) / 127)*2457;
+
+
+    // Đảm bảo duty cycle nằm trong phạm vi cho phép
+    leftWheelDutyCycle = constrain(leftWheelDutyCycle, 0, 2457);
+    rightWheelDutyCycle = constrain(rightWheelDutyCycle, 0, 2457);
+
+
+    //Gán tốc độ và bật Motor bánh xe
+    MotorActivate(8, leftWheelDutyCycle);
+    MotorActivate(9, 0);
+    MotorActivate(10, rightWheelDutyCycle);
+    MotorActivate(11, 0);
+   
+    }
+   else { //Nếu giá trị trục y<0 thì robot đi lùi và tốc độ được cập nhật liên tục
+                //Nếu x=0 thì robot rẽ theo hướng tùy vào giá trị x
+     
+      //Tính toán giá trị tốc độ của bánh trái và phải, x<0 thì bánh phải nhanh hơn, x>0 thì bánh trái quay nhanh hơn
+      rightWheelDutyCycle=(abs((double)( abs(y)- x )) / 127)*2457;
+      leftWheelDutyCycle=(abs((double)( abs(y) - (-x))) / 127 )*2457;
+
+
+    // Đảm bảo duty cycle nằm trong phạm vi cho phép
+    leftWheelDutyCycle = constrain(leftWheelDutyCycle, 0, 2457);
+    rightWheelDutyCycle = constrain(rightWheelDutyCycle, 0, 2457);
+
+
+    //Gán tốc độ và bật Motor bánh xe
+    analogWrite(8, 0);
+    analogWrite(9, leftWheelDutyCycle);
+    analogWrite(10, 0);
+    analogWrite(11, rightWheelDutyCycle);
+   
+    }
+
+
+    }
 
 
 void loop() {
@@ -207,16 +264,22 @@ void loop() {
   lux = tcs.calculateLux(r, g, b); // TÍnh độ rọi soi
  
   if (c>r && c>b && c>g) { //Nếu giá trị màu trắng lớn hơn màu đỏ, xanh lam và xanh lá thì quay servo đưa bóng sang bên trái
-    for (pos = 90; pos >= 0; pos -= 30){
-        servoSensor.write(pos)
+    for (angle1 = 90; angle1 >= 40; angle1 -= 10){
+        servoSensor.write(angle1);
+        delay(5);
       }
       delay(1000);
   }
-  else{ //Nếu không phải màu trắng thì quay servo đưa bóng sang bên phải
-    for (pos = 90; pos <= 180; pos += 30){
-        servoSensor.write(pos)
+  else if (r!=0 || b!= 0 || g!=0){ //Nếu mộ trong ba màu xanh lục xanh lá đỏ có giá trị khác không thì coi đó là màu đen
+    for (angle1 = 90; angle1 <= 140; angle1 += 10){
+        servoSensor.write(angle1);
+        delay(5);
       }
       delay(1000);
+  }
+  else {  //Nếu không nhận diện được màu thì Servo trở về vị trí ban đầu (góc 90 độ)
+    servoSensor.write(90);
+    delay(1000);
   }
 
 
@@ -224,67 +287,8 @@ void loop() {
     return;
  
   if(type == 2){ //Guitar Hero Controller
-    ps2x.read_gamepad();  //read controller
-    njoyX = ps2x.Analog(PSS_LX);
-    njoyY = ps2x.Analog(PSS_RY);
-    if (njoyY<joyY){ // Đi thẳng
-      StopWork(8);
-      StopWork(9);
-      StopWork(10);
-      StopWork(11);
-      delay(250); //Dừng động cơ tránh việc động cơ đảo chiều đột ngột
-
-
-      MotorActivate(8, 3072);
-      MotorActivate(9, 0);
-      MotorActivate(10, 3072);
-      MotorActivate(11, 0);
-    }
-    else if (njoyY<joyY){ // ĐI lùi
-      StopWork(8);
-      StopWork(9);
-      StopWork(10);
-      StopWork(11);
-      delay(250); //Dừng động cơ tránh việc động cơ đảo chiều đột ngột
-
-
-      MotorActivate(8, 0);
-      MotorActivate(9, 3072);
-      MotorActivate(10, 0);
-      MotorActivate(11, 3072);
-    }
-    else if (njoyX<joyX){ //Rẽ trái
-      StopWork(8);
-      StopWork(9);
-      StopWork(10);
-      StopWork(11);
-      delay(250); //Dừng động cơ tránh việc động cơ đảo chiều đột ngột
-
-
-      MotorActivate(8, 0);
-      MotorActivate(9, 3072);
-      MotorActivate(10, 3072);
-      MotorActivate(11, 0);
-    }
-    else if (njoyX<joyX){ //Rẽ phải
-      StopWork(8);
-      StopWork(9);
-      StopWork(10);
-      StopWork(11);
-      delay(250); //Dừng động cơ tránh việc động cơ đảo chiều đột ngột
-
-
-      MotorActivate(8, 3072);
-      MotorActivate(9, 0);
-      MotorActivate(10, 0);
-      MotorActivate(11, 3072);
-    }
-    else{ //Dừng lại
-      StopWork(8);
-      StopWork(9);
-      StopWork(10);
-      StopWork(11);
-    }
+     
+     MoveRobot(); // Gọi hàm di chuyển Robot
 
 
     if (ps2x.Button(PSB_TRIANGLE)==HIGH){ //Bật motor bắn bóng
@@ -305,53 +309,40 @@ void loop() {
       MotorActivate(12, 0);
       MotorActivate(13, 0);
     }
-    else if (ps2x.Button(PSB_R1)==HIGH){ //Giảm tốc độ motor thu thập bóng
-      MotorActivate(12, 1365);
-      MotorActivate(13, 0);
-      delay(250); //Dừng động cơ tránh đảo chiều động cơ đột ngột
 
 
-      MotorActivate(12, 1365);
-      MotorActivate(13, 0);
+    if (ps2x.Button(PSB_PAD_UP)==HIGH){ //Quay 2 Servo 360 trong 2 giây để nâng hộp bóng đen và đổ
+      servoWrist1.write(0); //Servo quay theo 1 hướng
+      servoWrist2.write(180); //Servo quay theo hướng ngược lại vì 2 servo ngược chiều nhau
+      delay(2000);
+      servoWrist1.write(90); //Dừng Servo
+      servoWrist2.write(90); //Dừng Servo
+
+
     }
-    else if (ps2x.Button(PSB_R2)==HIGH){// Đảo chiều motor thu thập bóng
-      MotorActivate(12, 0);
-      MotorActivate(13, 0);
-      delay(250); //Dừng động cơ tránh đảo chiều động cơ đột ngột
-
-
-      MotorActivate(12, 0);
-      MotorActivate(13, 3072);
-    }
-
-
-    if (ps2x.Button(PSB_PAD_UP)==HIGH){ //Quay 2 Servo 1 góc 60 độ để nâng hộp đựng bóng đen
-      for (pos = 0; pos <= 60; pos += 1){
-        servoWrist.write(pos);
-      }
-      delay(1000);
-    }
-    else if (ps2x.Button(PSB_PAD_DOWN)==HIGH){ //Quay 2 Servo để đưa hộp về vị tri cũ
-      for (pos = 60; pos >= 0; pos -= 1){
-        servoWrist.write(pos);
-      }
-      delay(1000);
+    else if (ps2x.Button(PSB_PAD_DOWN)==HIGH){ //Quay Servo để đưa hộp về vị tri cũ
+      servoWrist1.write(180); //Servo quay theo hướng ngược ban đầu
+      servoWrist2.write(0); //Servo quay theo hướng ngược ban đầu
+      delay(2000);
+      servoWrist1.write(90); //Dừng Servo
+      servoWrist2.write(90); //Dừng Servo
     }
    
     if (ps2x.Button(PSB_PAD_LEFT)==HIGH){ //Quay Servo đóng cổng không cho bóng trắng đi vào khu vực bắn
-      for (pos = 90; pos >= 0; pos -= 10){
-        servoGate.write(pos)
+      for (angle3 = 90; angle2 >= 0; angle2 -= 10){
+        servoGate.write(angle2);
+        delay(5);
       }
       delay(1000);
     }
      else if (ps2x.Button(PSB_PAD_RIGHT)==HIGH){ //Quay Servo mở cổng cho bóng trắng đi vào khu vực bắn
-      for (pos = 0; pos <= 90; pos += 10){
-        servoGate.write(pos)
+      for (angle3 = 0; angle2 <= 90; angle2 += 10){
+        servoGate.write(angle2);
+        delay(5);
       }
       delay(1000);
     }
-
-
+   
   }
   delay(50);  
 }
