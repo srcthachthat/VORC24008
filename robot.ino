@@ -6,27 +6,20 @@
 #include <Adafruit_PWMServoDriver.h>
 
 
-/******************************************************************
- * set pins connected to PS2 controller:
- *   - 1e column: original
- *   - 2e colmun: Stef?
- * replace pin numbers by the ones you use
- ******************************************************************/
-#define PS2_DAT        13  //14    
-#define PS2_CMD        11  //15
-#define PS2_SEL        10  //16
-#define PS2_CLK        12  //17
+//set pins connected to PS2 controller:
+#define PS2_DAT        13   
+#define PS2_CMD        11 
+#define PS2_SEL        10 
+#define PS2_CLK        12 
 
 
 /******************************************************************
  * select modes of PS2 controller:
  *   - pressures = analog reading of push-butttons
  *   - rumble    = motor rumbling
- * uncomment 1 of the lines for each mode selection
  ******************************************************************/
-//#define pressures   true
+
 #define pressures   false
-//#define rumble      true
 #define rumble      false
 
 
