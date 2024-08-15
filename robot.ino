@@ -201,7 +201,7 @@ void MoveRobot(){ //Hàm di chuyển Robot bằng joystick
 
 
     if (y>=0){ //Nếu giá trị trục y>0 thì robot đi thẳng và tốc độ được cập nhật liên tục
-                //Nếu x=0 thì robot rẽ theo hướng tùy vào giá trị x
+                //Nếu y=0 thì robot rẽ theo hướng tùy vào giá trị x
      
       //Tính toán giá trị tốc độ của bánh trái và phải, x<0 thì bánh phải nhanh hơn, x>0 thì bánh trái quay nhanh hơn
       rightWheelDutyCycle=(abs((double)(y - x)) / 127)*2457;
@@ -221,7 +221,6 @@ void MoveRobot(){ //Hàm di chuyển Robot bằng joystick
    
     }
    else { //Nếu giá trị trục y<0 thì robot đi lùi và tốc độ được cập nhật liên tục
-                //Nếu x=0 thì robot rẽ theo hướng tùy vào giá trị x
      
       //Tính toán giá trị tốc độ của bánh trái và phải, x<0 thì bánh phải nhanh hơn, x>0 thì bánh trái quay nhanh hơn
       rightWheelDutyCycle=(abs((double)( abs(y)- x )) / 127)*2457;
